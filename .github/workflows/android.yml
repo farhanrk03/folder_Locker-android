@@ -39,7 +39,11 @@ jobs:
         run: |
             mkdir -p ~/.buildozer/android/platform/android-sdk/tools/bin
             ln -sf ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager ~/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager
-                 
+      
+      - name: Install required build tools
+        run: |
+              sudo apt-get update
+              sudo apt-get install -y autoconf automake libtool pkg-config         
 
       - name: Build APK
         run: |
