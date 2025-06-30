@@ -1,4 +1,3 @@
-
 name: Build Android APK
 
 on:
@@ -11,29 +10,37 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Clone repo
-        uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
 
-      - name: Install buildozer & dependencies
+      - name: Install buildozer dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential ccache openjdk-17-jdk unzip git python3-pip zip zlib1g-dev libffi-dev libssl-dev
-          pip install buildozer cython virtualenv
-        
+          sudo apt-get install -y             build-essential ccache openjdk-17-jdk unzip git python3-pip zip zlib1g-dev             libffi-dev libssl-dev libjpeg-dev libandroid-execwrapper-dev
 
-      - name: Install Android Build Tools
+      - name: Install buildozer
         run: |
-            yes | ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager --licenses
-            ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager "build-tools;34.0.0" "platform-tools" "platforms;android-34"
-        
-        
+          pip install --upgrade pip
+          pip install cython virtualenv buildozer
 
-      - name: Build APK
+      - name: Initialize buildozer (download Android SDK/NDK inside .buildozer)
+        run: |
+          buildozer android update
+
+      - name: Accept Android SDK licenses
+        run: |
+          yes | ~/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/sdkmanager --licenses
+
+      - name: Install Android SDK tools (API 34)
+        run: |
+          ~/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/sdkmanager             "build-tools;34.0.0" "platform-tools" "platforms;android-34"
+
+      - name: Build APK with Buildozer
         run: |
           buildozer android debug
 
