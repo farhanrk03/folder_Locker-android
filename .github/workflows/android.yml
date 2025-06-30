@@ -22,8 +22,8 @@ jobs:
       - name: Install buildozer & dependencies
         run: |
             sudo apt-get update
-            sudo apt-get install -y build-essential ccache openjdk-17-jdk unzip git python3-pip zip zlib1g-dev
-            pip install buildozer cython virtualenv
+            sudo apt-get install -y build-essential ccache openjdk-17-jdk unzip git python3-pip zip zlib1g-dev autoconf automake libtool pkg-config m4
+            pip install --upgrade buildozer cython python-for-android
         
       - name: Install Android Build Tools
         run: |
