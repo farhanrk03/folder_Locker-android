@@ -23,7 +23,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential ccache openjdk-17-jdk unzip git python3-pip zip zlib1g-dev libffi-dev libssl-dev
-          pip install buildozer cython virtualen
+          pip install buildozer cython virtualenv
 
       - name: Build APK
         run: |
