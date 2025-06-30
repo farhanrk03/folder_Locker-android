@@ -32,8 +32,13 @@ jobs:
 
       - name: Link Android SDK to Buildozer's expected path
         run: |
-          mkdir -p ~/.buildozer/android/platform
-          ln -sf ${ANDROID_HOME} ~/.buildozer/android/platform/android-sdk
+            mkdir -p ~/.buildozer/android/platform
+            ln -sf ${ANDROID_HOME} ~/.buildozer/android/platform/android-sdk
+  
+      - name: Symlink sdkmanager for Buildozer compatibility
+        run: |
+            mkdir -p ~/.buildozer/android/platform/android-sdk/tools/bin
+            ln -sf ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager ~/.buildozer/android/platform/android-sdk/tools/bin/sdkmanager
                  
 
       - name: Build APK
