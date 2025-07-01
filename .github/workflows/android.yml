@@ -77,12 +77,12 @@ jobs:
 
       # Langkah 4.6: Bersihkan lingkungan Buildozer (opsional, tapi disarankan untuk fresh start)
       - name: Clean Buildozer environment
-        run: buildozer clean
+        run: python3 -m buildozer clean # Menggunakan python3 -m buildozer
 
       # Langkah 4.7: Perbarui Android SDK dan NDK menggunakan Buildozer
       # Perintah ini akan memastikan Buildozer mengunduh semua komponen yang diperlukan
       - name: Update Android SDK and NDK
-        run: buildozer android update
+        run: python3 -m buildozer android update # Menggunakan python3 -m buildozer
 
       # Langkah 4.8: Terima Lisensi Android SDK
       # Ini sangat penting agar komponen SDK dapat diunduh dan digunakan.
@@ -97,7 +97,7 @@ jobs:
       # Sekarang Buildozer akan menemukan SDK yang sudah diatur dan lisensi diterima
       - name: Build Android Debug APK
         run: |
-          buildozer android debug
+          python3 -m buildozer android debug # Menggunakan python3 -m buildozer
 
       # Langkah 6: Mengunggah APK yang dihasilkan sebagai artifact GitHub Actions
       # Ini memungkinkan Anda mengunduh APK dari halaman Actions setelah build selesai
