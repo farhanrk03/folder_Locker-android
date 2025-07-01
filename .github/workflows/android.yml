@@ -45,7 +45,7 @@ jobs:
 
       - name: Install Buildozer and Python Dependencies
         run: |
-          pip3 install --user --upgrade Cython==0.29.33 virtualenv buildozer
+          pip3 install --user --upgrade Cython==0.29.36 virtualenv buildozer python-for-android
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
       # --- Android SDK Setup ---
@@ -76,34 +76,31 @@ jobs:
         run: |
           yes | sdkmanager --licenses
 
-      - name: Install Android Build-Tools and Platform-Tools
+      - name: Install Android Build-Tools, Platform-Tools, and Platform
         run: |
-          sdkmanager "build-tools;34.0.0" "platform-tools"
+          sdkmanager "platforms;android-34" "build-tools;34.0.0" "platform-tools"
           echo "$ANDROID_HOME/platform-tools" >> $GITHUB_PATH
 
       - name: Clean Buildozer environment
         run: |
-          if [ -d ".buildozer" ]; then
-            rm -rf .buildozer
-          fi
+          if [ -d ".buildozer" ]; then rm -rf .buildozer; fi
+          if [ -d "bin" ]; then rm -rf bin; fi
 
       # --- Fix for autoconf/automake macro errors ---
       - name: Run autoupdate (fix autoconf macro errors)
         run: |
-          if [ -f configure.ac ]; then
-            autoupdate
-          fi
+          if [ -f configure.ac ]; then autoupdate; fi
 
       - name: Update Autotools
         run: |
           sudo apt-get update
           sudo apt-get install -y autoconf automake libtool
 
-      # Build APK
+      # Build APK with verbose output for debugging
       - name: Build Android Debug APK
         run: |
-          python3 -m buildozer android clean
-          python3 -m buildozer android debug
+          python3 -m buildozer -v android clean
+          python3 -m buildozer -v android debug
 
       - name: Upload Android APK
         uses: actions/upload-artifact@v4
