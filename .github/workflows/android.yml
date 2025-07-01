@@ -76,8 +76,12 @@ jobs:
           echo "$ANDROID_HOME/platform-tools" >> $GITHUB_PATH
 
       # Langkah 4.6: Bersihkan lingkungan Buildozer (opsional, tapi disarankan untuk fresh start)
+      # Mengganti 'buildozer clean' dengan penghapusan direktori .buildozer secara langsung
       - name: Clean Buildozer environment
-        run: python3 -m buildozer clean # Menggunakan python3 -m buildozer
+        run: |
+          if [ -d ".buildozer" ]; then
+            rm -rf .buildozer
+          fi
 
       # Langkah 4.7: Perbarui Android SDK dan NDK menggunakan Buildozer
       # Perintah ini akan memastikan Buildozer mengunduh semua komponen yang diperlukan
