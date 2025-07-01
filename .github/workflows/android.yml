@@ -61,7 +61,7 @@ jobs:
           # Ini memastikan perintah 'buildozer' dapat ditemukan
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
-      # --- START NEW ANDROID SDK SETUP STRATEGY ---
+      # --- START IMPROVED ANDROID SDK SETUP STRATEGY ---
 
       # Langkah 4.5: Setel JAVA_HOME dan ANDROID_HOME
       # Buildozer akan mengunduh SDK ke ~/.buildozer/android/platform/android-sdk
@@ -70,32 +70,47 @@ jobs:
         run: |
           echo "JAVA_HOME=$(dirname $(dirname $(readlink -f $(which javac))))" >> $GITHUB_ENV
           echo "ANDROID_HOME=$HOME/.buildozer/android/platform/android-sdk" >> $GITHUB_ENV
-          # Tambahkan direktori tools SDK ke PATH agar sdkmanager dan adb dapat ditemukan
-          # Ini akan ditambahkan setelah Buildozer mengunduh cmdline-tools
-          echo "$ANDROID_HOME/cmdline-tools/latest/bin" >> $GITHUB_PATH
+          # Buat direktori SDK jika belum ada
+          mkdir -p $ANDROID_HOME
+
+      # Langkah 4.6: Unduh dan Ekstrak Android Command-line Tools
+      # Ini adalah cara paling andal untuk mendapatkan sdkmanager
+      - name: Download and Extract Android Command-line Tools
+        run: |
+          # URL untuk command-line tools terbaru (Linux)
+          CMDLINE_TOOLS_URL="https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip"
+          TOOLS_DIR="$ANDROID_HOME/cmdline-tools"
+          mkdir -p "$TOOLS_DIR"
+          wget -q "$CMDLINE_TOOLS_URL" -O "$TOOLS_DIR/cmdline-tools.zip"
+          unzip -q "$TOOLS_DIR/cmdline-tools.zip" -d "$TOOLS_DIR"
+          # Pindahkan isi 'cmdline-tools' ke direktori 'latest'
+          mv "$TOOLS_DIR/cmdline-tools" "$TOOLS_DIR/latest"
+          # Tambahkan path ke sdkmanager ke GITHUB_PATH
+          echo "$TOOLS_DIR/latest/bin" >> $GITHUB_PATH
+
+      # Langkah 4.7: Terima Lisensi Android SDK
+      # Ini sangat penting agar komponen SDK dapat diunduh dan digunakan.
+      - name: Accept Android SDK Licenses
+        run: |
+          yes | sdkmanager --licenses
+
+      # Langkah 4.8: Instal Android Build-Tools dan Platform-Tools secara eksplisit
+      # Menginstal versi build-tools yang spesifik dan platform-tools
+      - name: Install Android Build-Tools and Platform-Tools
+        run: |
+          sdkmanager "build-tools;34.0.0" "platform-tools"
+          # Tambahkan platform-tools ke GITHUB_PATH
           echo "$ANDROID_HOME/platform-tools" >> $GITHUB_PATH
 
-      # Langkah 4.6: Bersihkan lingkungan Buildozer (opsional, tapi disarankan untuk fresh start)
-      # Mengganti 'buildozer clean' dengan penghapusan direktori .buildozer secara langsung
+      # Langkah 4.9: Bersihkan lingkungan Buildozer (opsional, tapi disarankan untuk fresh start)
+      # Menghapus direktori .buildozer secara langsung
       - name: Clean Buildozer environment
         run: |
           if [ -d ".buildozer" ]; then
             rm -rf .buildozer
           fi
 
-      # Langkah 4.7: Perbarui Android SDK dan NDK menggunakan Buildozer
-      # Perintah ini akan memastikan Buildozer mengunduh semua komponen yang diperlukan
-      - name: Update Android SDK and NDK
-        run: python3 -m buildozer android update # Menggunakan python3 -m buildozer
-
-      # Langkah 4.8: Terima Lisensi Android SDK
-      # Ini sangat penting agar komponen SDK dapat diunduh dan digunakan.
-      # Perintah 'yes |' secara otomatis menerima semua lisensi.
-      - name: Accept Android SDK Licenses
-        run: |
-          yes | sdkmanager --licenses
-
-      # --- END NEW ANDROID SDK SETUP STRATEGY ---
+      # --- END IMPROVED ANDROID SDK SETUP STRATEGY ---
 
       # Langkah 5: Membangun APK Android menggunakan Buildozer
       # Sekarang Buildozer akan menemukan SDK yang sudah diatur dan lisensi diterima
