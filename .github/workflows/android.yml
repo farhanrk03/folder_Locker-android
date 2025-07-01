@@ -53,7 +53,9 @@ jobs:
             libssl-dev \
             m4 \
             automake \
-            libtool-bin
+            libtool-bin \
+            gettext \
+            autopoint # Menambahkan gettext dan autopoint
 
       # Langkah 4: Menginstal Buildozer dan dependensi Python-nya
       # Cython adalah dependensi penting untuk Kivy
