@@ -50,7 +50,9 @@ jobs:
             libncursesw5-dev \
             cmake \
             libffi-dev \
-            libssl-dev
+            libssl-dev \
+            m4 # Menambahkan m4
+            # libtool sudah ada di daftar, memastikan autoconf juga ada
 
       # Langkah 4: Menginstal Buildozer dan dependensi Python-nya
       # Cython adalah dependensi penting untuk Kivy
