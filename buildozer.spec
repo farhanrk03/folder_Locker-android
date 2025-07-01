@@ -6,7 +6,7 @@ package.domain = org.frk.stampo
 source.dir = .
 source.include_exts = py,kv,png,jpg,txt,json,ico
 version = 1.0
-requirements = python3,kivy,pyzipper,plyer
+requirements = python3==3.10.12,kivy,pyzipper,plyer
 icon.filename = assets/icon.png
 orientation = portrait
 fullscreen = 1
