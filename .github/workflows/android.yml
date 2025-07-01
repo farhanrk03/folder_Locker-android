@@ -51,8 +51,9 @@ jobs:
             cmake \
             libffi-dev \
             libssl-dev \
-            m4 # Menambahkan m4
-            # libtool sudah ada di daftar, memastikan autoconf juga ada
+            m4 \
+            automake \
+            libtool-bin # Menambahkan automake dan libtool-bin
 
       # Langkah 4: Menginstal Buildozer dan dependensi Python-nya
       # Cython adalah dependensi penting untuk Kivy
