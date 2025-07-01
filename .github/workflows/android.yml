@@ -1,58 +1,88 @@
+# Nama workflow ini yang akan muncul di tab 'Actions' GitHub Anda
 name: Build Android APK
 
+# Kapan workflow ini akan dijalankan
+# Akan dipicu setiap kali ada push ke branch 'main'
+# Juga bisa dijalankan secara manual dari UI GitHub Actions
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
   workflow_dispatch:
 
+# Definisi pekerjaan (jobs)
 jobs:
   build:
+    # Runner yang akan digunakan untuk menjalankan pekerjaan ini
+    # Ubuntu adalah lingkungan yang direkomendasikan untuk Buildozer
     runs-on: ubuntu-latest
 
+    # Langkah-langkah (steps) yang akan dijalankan dalam pekerjaan 'build'
     steps:
-      - name: Clone repo
-        uses: actions/checkout@v3
+      # Langkah 1: Checkout kode repositori Anda
+      # Mengambil kode dari repositori GitHub ke runner
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      # Langkah 2: Menyiapkan lingkungan Python
+      # Buildozer membutuhkan Python untuk beroperasi
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: '3.9' # Pilih versi Python yang kompatibel dengan Kivy dan Buildozer
 
-      - name: Install dependencies
+      # Langkah 3: Menginstal dependensi sistem yang dibutuhkan oleh Buildozer untuk Android
+      # Ini termasuk JDK, alat pengembangan, dan pustaka lain
+      - name: Install Buildozer System Dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            build-essential ccache openjdk-17-jdk unzip git python3-pip zip zlib1g-dev \
-            libffi-dev libssl-dev libjpeg-dev autoconf automake libtool pkg-config m4
-          pip install --upgrade pip
-          pip install buildozer cython virtualenv
+          sudo apt update
+          sudo apt install -y \
+            git \
+            zip \
+            unzip \
+            openjdk-17-jdk \
+            python3-pip \
+            autoconf \
+            libtool \
+            pkg-config \
+            zlib1g-dev \
+            libncurses5-dev \
+            libncursesw5-dev \
+            libtinfo5 \
+            cmake \
+            libffi-dev \
+            libssl-dev
 
-      - name: Install Android Build Tools
+      # Langkah 4: Menginstal Buildozer dan dependensi Python-nya
+      # Cython adalah dependensi penting untuk Kivy
+      - name: Install Buildozer and Python Dependencies
         run: |
-            sdkmanager "build-tools;34.0.0"
+          # Menginstal Cython versi spesifik untuk kompatibilitas
+          pip3 install --user --upgrade Cython==0.29.33
+          # Menginstal virtualenv (opsional, tapi praktik yang baik)
+          pip3 install --user virtualenv
+          # Menginstal Buildozer dari PyPI
+          pip3 install --user buildozer
 
-      - name: Buildozer Init + Accept SDK License
+          # Menambahkan direktori instalasi user Python ke PATH
+          # Ini memastikan perintah 'buildozer' dapat ditemukan
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      # Langkah 5: Membangun APK Android menggunakan Buildozer
+      # Ini adalah perintah utama yang akan menjalankan proses build
+      - name: Build Android Debug APK
         run: |
-          buildozer android update
-          yes | ~/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/sdkmanager --licenses
-          ~/.buildozer/android/platform/android-sdk/cmdline-tools/latest/bin/sdkmanager \
-            "build-tools;34.0.0" "platform-tools" "platforms;android-34"
-
-      - name: Ensure build-tools are in place
-        run: |   
-          BUILD_TOOLS_DIR=~/.buildozer/android/platform/android-sdk/build-tools/34.0.0
-            if [ ! -d "$BUILD_TOOLS_DIR" ]; then
-            mkdir -p ~/.buildozer/android/platform/android-sdk/build-tools
-            ln -s ~/.buildozer/android/platform/android-sdk/cmdline-tools/latest/build-tools/34.0.0 "$BUILD_TOOLS_DIR"
-            fi
-
-
-      - name: Build APK
-        run: |
+          # Perintah 'buildozer android debug' akan mengunduh SDK/NDK
+          # dan semua alat yang diperlukan secara otomatis pada eksekusi pertama.
+          # Proses ini bisa memakan waktu lama.
           buildozer android debug
 
-      - name: Upload APK
+      # Langkah 6: Mengunggah APK yang dihasilkan sebagai artifact GitHub Actions
+      # Ini memungkinkan Anda mengunduh APK dari halaman Actions setelah build selesai
+      - name: Upload Android APK
         uses: actions/upload-artifact@v4
         with:
-          name: FolderLocker-APK
-          path: bin/*.apk
+          name: android-apk-debug
+          path: bin/*.apk # Path di mana Buildozer menyimpan APK yang dihasilkan
+          retention-days: 7 # Berapa lama artifact akan disimpan (misalnya, 7 hari)
+
