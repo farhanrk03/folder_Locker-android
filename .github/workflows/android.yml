@@ -1,38 +1,24 @@
-# Nama workflow ini yang akan muncul di tab 'Actions' GitHub Anda
 name: Build Android APK
 
-# Kapan workflow ini akan dijalankan
-# Akan dipicu setiap kali ada push ke branch 'main'
-# Juga bisa dijalankan secara manual dari UI GitHub Actions
 on:
   push:
     branches:
       - main
   workflow_dispatch:
 
-# Definisi pekerjaan (jobs)
 jobs:
   build:
-    # Runner yang akan digunakan untuk menjalankan pekerjaan ini
-    # Ubuntu adalah lingkungan yang direkomendasikan untuk Buildozer
     runs-on: ubuntu-latest
 
-    # Langkah-langkah (steps) yang akan dijalankan dalam pekerjaan 'build'
     steps:
-      # Langkah 1: Checkout kode repositori Anda
-      # Mengambil kode dari repositori GitHub ke runner
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # Langkah 2: Menyiapkan lingkungan Python
-      # Buildozer membutuhkan Python untuk beroperasi
       - name: Set up Python 3.9
         uses: actions/setup-python@v5
         with:
-          python-version: '3.9' # Pilih versi Python yang kompatibel dengan Kivy dan Buildozer
+          python-version: '3.9'
 
-      # Langkah 3: Menginstal dependensi sistem yang dibutuhkan oleh Buildozer untuk Android
-      # Ini termasuk JDK, alat pengembangan, dan pustaka lain
       - name: Install Buildozer System Dependencies
         run: |
           sudo apt update
@@ -43,6 +29,7 @@ jobs:
             openjdk-17-jdk \
             python3-pip \
             autoconf \
+            automake \
             libtool \
             pkg-config \
             zlib1g-dev \
@@ -52,92 +39,69 @@ jobs:
             libffi-dev \
             libssl-dev \
             m4 \
-            automake \
             libtool-bin \
             gettext \
-            autopoint # Menambahkan gettext dan autopoint
+            autopoint
 
-      # Langkah 4: Menginstal Buildozer dan dependensi Python-nya
-      # Cython adalah dependensi penting untuk Kivy
       - name: Install Buildozer and Python Dependencies
         run: |
           pip3 install --user --upgrade Cython==0.29.33 virtualenv buildozer
-          # Menambahkan direktori instalasi user Python ke PATH
-          # Ini memastikan perintah 'buildozer' dapat ditemukan
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
-      # --- START IMPROVED ANDROID SDK SETUP STRATEGY ---
-
-      # Langkah 4.5: Setel JAVA_HOME dan ANDROID_HOME
-      # Buildozer akan mengunduh SDK ke ~/.buildozer/android/platform/android-sdk
-      # Menyetel ANDROID_HOME secara eksplisit dapat membantu Buildozer menemukannya.
+      # --- Android SDK Setup ---
       - name: Set JAVA_HOME and ANDROID_HOME
         run: |
           echo "JAVA_HOME=$(dirname $(dirname $(readlink -f $(which javac))))" >> $GITHUB_ENV
           echo "ANDROID_HOME=$HOME/.buildozer/android/platform/android-sdk" >> $GITHUB_ENV
-          # Buat direktori SDK jika belum ada
           mkdir -p $ANDROID_HOME
 
-      # Langkah 4.6: Unduh dan Ekstrak Android Command-line Tools
-      # Ini adalah cara paling andal untuk mendapatkan sdkmanager
       - name: Download and Extract Android Command-line Tools
         run: |
-          # URL untuk command-line tools terbaru (Linux)
           CMDLINE_TOOLS_URL="https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip"
           TOOLS_DIR="$ANDROID_HOME/cmdline-tools"
           mkdir -p "$TOOLS_DIR"
           wget -q "$CMDLINE_TOOLS_URL" -O "$TOOLS_DIR/cmdline-tools.zip"
           unzip -q "$TOOLS_DIR/cmdline-tools.zip" -d "$TOOLS_DIR"
-          # Pindahkan isi 'cmdline-tools' ke direktori 'latest'
           mv "$TOOLS_DIR/cmdline-tools" "$TOOLS_DIR/latest"
-          # Tambahkan path ke sdkmanager ke GITHUB_PATH
           echo "$TOOLS_DIR/latest/bin" >> $GITHUB_PATH
 
-      # Langkah 4.6.1: Buat Symlink untuk sdkmanager di lokasi 'tools/bin' lama
-      # Ini mengatasi masalah di mana beberapa alat masih mencari sdkmanager di lokasi lama
       - name: Create sdkmanager Symlink
         run: |
           OLD_TOOLS_BIN="$ANDROID_HOME/tools/bin"
           mkdir -p "$OLD_TOOLS_BIN"
           ln -s "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "$OLD_TOOLS_BIN/sdkmanager"
-          ln -s "$ANDROID_HOME/cmdline-tools/latest/bin/avdmanager" "$OLD_TOOLS_BIN/avdmanager" # Juga symlink avdmanager jika dibutuhkan
+          ln -s "$ANDROID_HOME/cmdline-tools/latest/bin/avdmanager" "$OLD_TOOLS_BIN/avdmanager"
 
-      # Langkah 4.7: Terima Lisensi Android SDK
-      # Ini sangat penting agar komponen SDK dapat diunduh dan digunakan.
       - name: Accept Android SDK Licenses
         run: |
           yes | sdkmanager --licenses
 
-      # Langkah 4.8: Instal Android Build-Tools dan Platform-Tools secara eksplisit
-      # Menginstal versi build-tools yang spesifik dan platform-tools
       - name: Install Android Build-Tools and Platform-Tools
         run: |
           sdkmanager "build-tools;34.0.0" "platform-tools"
-          # Tambahkan platform-tools ke GITHUB_PATH
           echo "$ANDROID_HOME/platform-tools" >> $GITHUB_PATH
 
-      # Langkah 4.9: Bersihkan lingkungan Buildozer (opsional, tapi disarankan untuk fresh start)
-      # Menghapus direktori .buildozer secara langsung
       - name: Clean Buildozer environment
         run: |
           if [ -d ".buildozer" ]; then
             rm -rf .buildozer
           fi
 
-      # --- END IMPROVED ANDROID SDK SETUP STRATEGY ---
+      # --- Fix for autoconf/automake macro errors ---
+      - name: Run autoupdate (fix autoconf macro errors)
+        run: |
+          if [ -f configure.ac ]; then
+            autoupdate
+          fi
 
-      # Langkah 5: Membangun APK Android menggunakan Buildozer
-      # Sekarang Buildozer akan menemukan SDK yang sudah diatur dan lisensi diterima
+      # Build APK
       - name: Build Android Debug APK
         run: |
-          # Buildozer akan menggunakan android.minapi dari buildozer.spec
           python3 -m buildozer android debug
 
-      # Langkah 6: Mengunggah APK yang dihasilkan sebagai artifact GitHub Actions
-      # Ini memungkinkan Anda mengunduh APK dari halaman Actions setelah build selesai
       - name: Upload Android APK
         uses: actions/upload-artifact@v4
         with:
           name: android-apk-debug
-          path: bin/*.apk # Path di mana Buildozer menyimpan APK yang dihasilkan
-          retention-days: 7 # Berapa lama artifact akan disimpan (misalnya, 7 hari)
+          path: bin/*.apk
+          retention-days: 7
