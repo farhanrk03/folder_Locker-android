@@ -125,7 +125,9 @@ jobs:
       # Sekarang Buildozer akan menemukan SDK yang sudah diatur dan lisensi diterima
       - name: Build Android Debug APK
         run: |
-          python3 -m buildozer android debug # Menggunakan python3 -m buildozer
+          # Pastikan buildozer.spec memiliki android.minapi=24 atau lebih rendah
+          # dan android.ndk=26c (atau versi yang kompatibel)
+          python3 -m buildozer android debug
 
       # Langkah 6: Mengunggah APK yang dihasilkan sebagai artifact GitHub Actions
       # Ini memungkinkan Anda mengunduh APK dari halaman Actions setelah build selesai
