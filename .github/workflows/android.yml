@@ -88,6 +88,15 @@ jobs:
           # Tambahkan path ke sdkmanager ke GITHUB_PATH
           echo "$TOOLS_DIR/latest/bin" >> $GITHUB_PATH
 
+      # Langkah 4.6.1: Buat Symlink untuk sdkmanager di lokasi 'tools/bin' lama
+      # Ini mengatasi masalah di mana beberapa alat masih mencari sdkmanager di lokasi lama
+      - name: Create sdkmanager Symlink
+        run: |
+          OLD_TOOLS_BIN="$ANDROID_HOME/tools/bin"
+          mkdir -p "$OLD_TOOLS_BIN"
+          ln -s "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "$OLD_TOOLS_BIN/sdkmanager"
+          ln -s "$ANDROID_HOME/cmdline-tools/latest/bin/avdmanager" "$OLD_TOOLS_BIN/avdmanager" # Juga symlink avdmanager jika dibutuhkan
+
       # Langkah 4.7: Terima Lisensi Android SDK
       # Ini sangat penting agar komponen SDK dapat diunduh dan digunakan.
       - name: Accept Android SDK Licenses
