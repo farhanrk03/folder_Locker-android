@@ -94,6 +94,12 @@ jobs:
             autoupdate
           fi
 
+      - name: Run autoreconf (fix autoconf macro errors)
+        run: |
+          if [ -f configure.ac ]; then
+            autoreconf -i
+          fi
+
       # Build APK
       - name: Build Android Debug APK
         run: |
