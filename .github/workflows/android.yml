@@ -56,24 +56,47 @@ jobs:
       # Cython adalah dependensi penting untuk Kivy
       - name: Install Buildozer and Python Dependencies
         run: |
-          # Menginstal Cython versi spesifik untuk kompatibilitas
-          pip3 install --user --upgrade Cython==0.29.33
-          # Menginstal virtualenv (opsional, tapi praktik yang baik)
-          pip3 install --user virtualenv
-          # Menginstal Buildozer dari PyPI
-          pip3 install --user buildozer
-
+          pip3 install --user --upgrade Cython==0.29.33 virtualenv buildozer
           # Menambahkan direktori instalasi user Python ke PATH
           # Ini memastikan perintah 'buildozer' dapat ditemukan
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
+      # --- START NEW ANDROID SDK SETUP STRATEGY ---
+
+      # Langkah 4.5: Setel JAVA_HOME dan ANDROID_HOME
+      # Buildozer akan mengunduh SDK ke ~/.buildozer/android/platform/android-sdk
+      # Menyetel ANDROID_HOME secara eksplisit dapat membantu Buildozer menemukannya.
+      - name: Set JAVA_HOME and ANDROID_HOME
+        run: |
+          echo "JAVA_HOME=$(dirname $(dirname $(readlink -f $(which javac))))" >> $GITHUB_ENV
+          echo "ANDROID_HOME=$HOME/.buildozer/android/platform/android-sdk" >> $GITHUB_ENV
+          # Tambahkan direktori tools SDK ke PATH agar sdkmanager dan adb dapat ditemukan
+          # Ini akan ditambahkan setelah Buildozer mengunduh cmdline-tools
+          echo "$ANDROID_HOME/cmdline-tools/latest/bin" >> $GITHUB_PATH
+          echo "$ANDROID_HOME/platform-tools" >> $GITHUB_PATH
+
+      # Langkah 4.6: Bersihkan lingkungan Buildozer (opsional, tapi disarankan untuk fresh start)
+      - name: Clean Buildozer environment
+        run: buildozer clean
+
+      # Langkah 4.7: Perbarui Android SDK dan NDK menggunakan Buildozer
+      # Perintah ini akan memastikan Buildozer mengunduh semua komponen yang diperlukan
+      - name: Update Android SDK and NDK
+        run: buildozer android update
+
+      # Langkah 4.8: Terima Lisensi Android SDK
+      # Ini sangat penting agar komponen SDK dapat diunduh dan digunakan.
+      # Perintah 'yes |' secara otomatis menerima semua lisensi.
+      - name: Accept Android SDK Licenses
+        run: |
+          yes | sdkmanager --licenses
+
+      # --- END NEW ANDROID SDK SETUP STRATEGY ---
+
       # Langkah 5: Membangun APK Android menggunakan Buildozer
-      # Ini adalah perintah utama yang akan menjalankan proses build
+      # Sekarang Buildozer akan menemukan SDK yang sudah diatur dan lisensi diterima
       - name: Build Android Debug APK
         run: |
-          # Perintah 'buildozer android debug' akan mengunduh SDK/NDK
-          # dan semua alat yang diperlukan secara otomatis pada eksekusi pertama.
-          # Proses ini bisa memakan waktu lama.
           buildozer android debug
 
       # Langkah 6: Mengunggah APK yang dihasilkan sebagai artifact GitHub Actions
@@ -84,4 +107,3 @@ jobs:
           name: android-apk-debug
           path: bin/*.apk # Path di mana Buildozer menyimpan APK yang dihasilkan
           retention-days: 7 # Berapa lama artifact akan disimpan (misalnya, 7 hari)
-
